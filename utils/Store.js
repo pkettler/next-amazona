@@ -1,6 +1,5 @@
 import Cookies from 'js-cookie';
 import { createContext, useReducer } from 'react';
-
 export const Store = createContext();
 const initialState = {
   darkMode: Cookies.get('darkMode') === 'ON' ? true : false,
@@ -10,7 +9,6 @@ const initialState = {
       : [],
   },
 };
-
 function reducer(state, action) {
   switch (action.type) {
     case 'DARK_MODE_ON':
@@ -19,7 +17,6 @@ function reducer(state, action) {
       return { ...state, darkMode: false };
     case 'CART_ADD_ITEM': {
       const newItem = action.payload;
-      //checks to see if item exists
       const existItem = state.cart.cartItems.find(
         (item) => item._id === newItem._id
       );
@@ -31,11 +28,18 @@ function reducer(state, action) {
       Cookies.set('cartItems', JSON.stringify(cartItems));
       return { ...state, cart: { ...state.cart, cartItems } };
     }
+    case 'CART_REMOVE_ITEM': {
+      const cartItems = state.cart.cartItems.filter(
+        (item) => item._id !== action.payload._id
+      );
+      Cookies.set('cartItems', JSON.stringify(cartItems));
+      return { ...state, cart: { ...state.cart, cartItems } };
+    }
+
     default:
       return state;
   }
 }
-
 export function StoreProvider(props) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const value = { state, dispatch };

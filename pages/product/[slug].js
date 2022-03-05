@@ -2,13 +2,13 @@ import React, { useContext } from 'react';
 import NextLink from 'next/link';
 import Image from 'next/image';
 import {
-  Button,
-  Card,
   Grid,
   Link,
   List,
   ListItem,
   Typography,
+  Card,
+  Button,
 } from '@material-ui/core';
 import Layout from '../../components/Layout';
 import useStyles from '../../utils/styles';
@@ -16,28 +16,34 @@ import Product from '../../models/Product';
 import db from '../../utils/db';
 import axios from 'axios';
 import { Store } from '../../utils/Store';
+import { useRouter } from 'next/router';
 
 export default function ProductScreen(props) {
-  const { dispatch } = useContext(Store);
+  const router = useRouter();
+  const { state, dispatch } = useContext(Store);
   const { product } = props;
   const classes = useStyles();
   if (!product) {
     return <div>Product Not Found</div>;
   }
   const addToCartHandler = async () => {
+    const existItem = state.cart.cartItems.find((x) => x._id === product._id);
+    const quantity = existItem ? existItem.quantity + 1 : 1;
     const { data } = await axios.get(`/api/products/${product._id}`);
-    if (data.countInStock <= 0) {
+    if (data.countInStock < quantity) {
       window.alert('Sorry. Product is out of stock');
       return;
     }
     dispatch({ type: 'CART_ADD_ITEM', payload: { ...product, quantity: 1 } });
+    router.push('/cart');
   };
+
   return (
     <Layout title={product.name} description={product.description}>
       <div className={classes.section}>
         <NextLink href="/" passHref>
           <Link>
-            <Typography>Back to Products</Typography>
+            <Typography>back to products</Typography>
           </Link>
         </NextLink>
       </div>
@@ -70,7 +76,7 @@ export default function ProductScreen(props) {
               </Typography>
             </ListItem>
             <ListItem>
-              <Typography>Description: {product.description}</Typography>
+              <Typography> Description: {product.description}</Typography>
             </ListItem>
           </List>
         </Grid>
@@ -99,14 +105,16 @@ export default function ProductScreen(props) {
                   </Grid>
                 </Grid>
               </ListItem>
-              <Button
-                fullWidth
-                variant="contained"
-                color="primary"
-                onClick={addToCartHandler}
-              >
-                Add to cart
-              </Button>
+              <ListItem>
+                <Button
+                  fullWidth
+                  variant="contained"
+                  color="primary"
+                  onClick={addToCartHandler}
+                >
+                  Add to cart
+                </Button>
+              </ListItem>
             </List>
           </Card>
         </Grid>
@@ -114,7 +122,6 @@ export default function ProductScreen(props) {
     </Layout>
   );
 }
-
 export async function getServerSideProps(context) {
   const { params } = context;
   const { slug } = params;
